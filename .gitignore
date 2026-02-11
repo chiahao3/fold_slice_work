@@ -1,0 +1,9 @@
+# Matlab executable files
+*.mexa64
+*.mexw64
+*.dat
+
+# data, logs, output 
+data/*
+output/*
+logs/*
