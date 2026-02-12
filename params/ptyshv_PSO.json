@@ -1,0 +1,62 @@
+{
+    "cSAXS_matlab_path": "/home/fs01/cl2696/workspace/fold_slice",
+
+    "voltage": 300,
+    "alpha0": 21.4,
+    "df": -200,
+    "Npix": 256,
+    "N_scan_x": 64,
+    "N_scan_y": 64,
+    "scan_step_size": 0.410,
+    "rbf": 26.0445,
+    "ADU": 1,
+
+    "Nprobe": 8,
+    "variable_probe_modes": 0,
+    "Nlayers": 21,
+    "delta_z": 10,
+    "regularize_layers": 1,
+
+    "dScanX": 1,
+    "dScanY": 1,
+    "Np_crop_pad": [128, 128],
+    "resample_factor": 1,
+    "scan_custom_flip": [1, 1, 0],
+    "custom_data_flip": [0, 0, 1],
+    "scan_affine": [1,0,0,0],
+    "overwrite_hdf5": false,
+
+    "meas_source" : "file",
+    "meas_params" : {"path": "/home/fs01/cl2696/workspace/fold_slice_work/data/PSO/sample_data_PrScO3.mat", "key": "dp"},
+    "probe_source" : "simu",
+    "probe_params" : {},
+    "obj_source" : "simu",
+    "obj_params" : {},
+    "pos_source" : "simu",
+    "pos_params" : {},
+
+    "reg_mu": 0,                           
+    "delta": 0,                            
+    "positivity_constraint_object": 0,     
+    "apply_multimodal_update": false,          
+
+    "probe_geometry_model": [],
+    "apply_relaxed_position_constraint": false,
+    "update_pos_weight_every": 100,
+
+    "GPU_ID": 1,
+    "scan_number": 1,
+    "data_descriptor": "PSO",
+    "output_dir": "/home/fs01/cl2696/workspace/fold_slice_work/output/PSO/20260212_affine",
+    "Niter": 200,
+    "Niter_save_results": 20,
+    "Niter_plot_results": 1000,
+    "grouping": 64,
+    "GPU_solver": "MLs",
+    "errmetric": "L1",
+    "diff_pattern_blur": 1,
+    "probe_change_start": 20,
+    "object_change_start": 1,
+    "pos_change_start": 50
+  }
+  

@@ -69,6 +69,17 @@ function out = ptyshv_solver(params)
     pos_source           = params.pos_source;                    % 'simu' or 'PtyShv'
     pos_params           = params.pos_params;                    % struct or array
 
+    % Regularizations (optional for backward compatibility with ptyrad_paper)
+    reg_mu                            = struct_get(params, 'reg_mu', 0); % Regularization (smooting) constant ( reg_mu = 0 for no regularization)
+    delta                             = struct_get(params, 'delta', 0); % press values to zero out of the illumination area in th object, usually 1e-2 is enough 
+    positivity_constraint_object      = struct_get(params, 'positivity_constraint_object', 0); % enforce weak (relaxed) positivity in object, ie O = O*(1-a)+a*|O|, usually a=1e-2 is already enough. Useful in conbination with OPRP or probe_fourier_shift_search
+    apply_multimodal_update           = struct_get(params, 'apply_multimodal_update', true); % apply all incoherent modes to object, it can cause isses if the modes collect some crap 
+
+    % Advanced position (optional for backward compatibility with ptyrad_paper)
+    probe_geometry_model              = struct_get(params, 'probe_geometry_model', {}); % {}, list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'} 
+    apply_relaxed_position_constraint = struct_get(params, 'apply_relaxed_position_constraint', false); % added by YJ. Apply a relaxed constraint to probe positions. default = true. Set to false if there are big jumps in positions.
+    update_pos_weight_every           = struct_get(params, 'update_pos_weight_every', 100); % added by YJ. Allow position weight to be updated multiple times. default = inf: only update once.
+
     % Reconstruction parameters
     GPU_ID               = params.GPU_ID;                        % default GPU id, [] means choosen by matlab. Note that Matlab starts from 1.
     scan_number          = params.scan_number;                   % Ptychoshelves needs
@@ -186,7 +197,8 @@ function out = ptyshv_solver(params)
         switch probe_source
             case 'simu'
                 disp("### Simulating initial probe from input experimental parameters ###")
-                if isempty(probe_params)
+                if isempty(probe_params) || isempty(fieldnames(probe_params))
+                    disp("### Filling probe_params ###")
                     probe_params = struct();
                     probe_params. df = df;
                     probe_params. voltage = voltage;
@@ -236,7 +248,7 @@ function out = ptyshv_solver(params)
     p.   focus_to_sample_distance = [];                          % sample to focus distance, parameter to be set for nearfield ptychography, otherwise it is ignored 
     p.   energy = voltage;                                       % Energy (in keV), leave empty to use spec entry mokev
     
-    if isempty(scan_affine) 
+    if isempty(scan_affine)
         p.   affine_matrix = [];
     else
         p.   affine_matrix = compose_affine_matrix(scan_affine(1), ...
@@ -437,11 +449,11 @@ function out = ptyshv_solver(params)
     eng. probe_change_start = probe_change_start;                % Start updating probe at this iteration number
     
     % regularizations 
-    eng. reg_mu = 0;                                             % Regularization (smooting) constant ( reg_mu = 0 for no regularization)
-    eng. delta = 0;                                              % press values to zero out of the illumination area in th object, usually 1e-2 is enough 
-    eng. positivity_constraint_object = 0;                       % enforce weak (relaxed) positivity in object, ie O = O*(1-a)+a*|O|, usually a=1e-2 is already enough. Useful in conbination with OPRP or probe_fourier_shift_search  
+    eng. reg_mu = reg_mu;                                        % Regularization (smooting) constant ( reg_mu = 0 for no regularization)
+    eng. delta = delta;                                          % press values to zero out of the illumination area in th object, usually 1e-2 is enough 
+    eng. positivity_constraint_object = positivity_constraint_object; % enforce weak (relaxed) positivity in object, ie O = O*(1-a)+a*|O|, usually a=1e-2 is already enough. Useful in conbination with OPRP or probe_fourier_shift_search  
     
-    eng. apply_multimodal_update = true;                         % apply all incoherent modes to object, it can cause isses if the modes collect some crap 
+    eng. apply_multimodal_update = apply_multimodal_update;      % apply all incoherent modes to object, it can cause isses if the modes collect some crap 
     eng. probe_backpropagate = 0;                                % backpropagation distance the probe mask, 0 == apply in the object plane. Useful for pinhole imaging where the support can be applied  at the pinhole plane
     eng. probe_support_radius = [];                              % Normalized radius of circular support, = 1 for radius touching the window    
     eng. probe_support_fft = false;                              % assume that there is not illumination intensity out of the central FZP cone and enforce this contraint. Useful for imaging with focusing optics. Helps to remove issues from the gaps between detector modules.
@@ -464,10 +476,10 @@ function out = ptyshv_solver(params)
     % position refinement  
     eng. apply_subpix_shift = true;                              % apply FFT-based subpixel shift, it is automatically allowed for position refinement
     eng. probe_position_search = pos_change_start;               % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
-    eng. probe_geometry_model = {'scale', 'asymmetry', 'rotation', 'shear'};  % {}, list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
+    eng. probe_geometry_model = probe_geometry_model;            % {}, list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
     eng. probe_position_error_max = inf;                         % maximal expected random position errors, probe prositions are confined in a circle with radius defined by probe_position_error_max and with center defined by original positions scaled by probe_geometry_model
-    eng. apply_relaxed_position_constraint = false;              % added by YJ. Apply a relaxed constraint to probe positions. default = true. Set to false if there are big jumps in positions.
-    eng. update_pos_weight_every = 100;                          % added by YJ. Allow position weight to be updated multiple times. default = inf: only update once.
+    eng. apply_relaxed_position_constraint = apply_relaxed_position_constraint; % added by YJ. Apply a relaxed constraint to probe positions. default = true. Set to false if there are big jumps in positions.
+    eng. update_pos_weight_every = update_pos_weight_every;      % added by YJ. Allow position weight to be updated multiple times. default = inf: only update once.
     
     % multilayer extension  
     if Nlayers>1 
